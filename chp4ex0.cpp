@@ -8,103 +8,93 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include "grade.h"
+#include "Student_info.h"
 
-using std::cin;        using std::setprecision; // 실수 숫자 길이 정의
-using std::cout; using std::string;
-using std::endl; using std::streamsize;
-using std::sort; using std::vector;
-using std::domain_error; using std::istream;
+
+using namespace std;
 
 // 중간시험 점수, 기말시험 점수, 종합 과제 점수에서
 // 학생의 종합 점수를 가함
 double grade(double mt, double ft, double hw) {
-        return 0.2 * mt + 0.4 * ft + 0.4 * hw;
+return 0.2 * mt + 0.4 * ft + 0.4 * hw;
 }
 
 // vector<double>의 중앙값을 구함.
 // 함수를 호출하면 인수로 제공된 백터를 통째로 복사
 double median(vector<double> vec) {
-        // 과제 점수의 입력 유무를 확인
-        typedef vector<double>::size_type vec_sz;
-        vec_sz size = vec.size();
-        if (size == 0) {
-                throw domain_error("Median of empty vector");
-        }
-
-        // 점수를 정렬
-        sort(vec.begin(), vec.end());
-
-        // 과제 점수의 중앙값을 구함
-        vec_sz mid = size / 2;
-        return size % 2 == 0
-                ? (vec[mid] + vec[mid - 1]) / 2 : vec[mid];
+// 과제 점수의 입력 유무를 확인
+    typedef vector<double>::size_type vec_sz;
+    vec_sz size = vec.size();
+    if (size == 0) {
+        throw domain_error("Median of empty vector");
 }
 
-// 중간시험 점수, 기말시험 점수, 과제 점수의 백터로
-// 학생의 종합 점수를 가함.
-// 이 함수는 인수를 복사하기 않고 median 함수가 해당 작업을 실행.
-double grade(double mt, double ft, const vector<double>& hw) {
+    // 점수를 정렬
+    sort(vec.begin(), vec.end());
+
+    // 과제 점수의 중앙값을 구함
+    vec_sz mid = size / 2;
+    return size % 2 == 0
+        ? (vec[mid] + vec[mid - 1]) / 2 : vec[mid];
+}
+
+    // 중간시험 점수, 기말시험 점수, 과제 점수의 백터로
+    // 학생의 종합 점수를 가함.
+    // 이 함수는 인수를 복사하기 않고 median 함수가 해당 작업을 실행.
+    double grade(double mt, double ft, const vector<double>& hw) {
         if (hw.size() == 0)
-                throw domain_error("No homework!");
+            throw domain_error("No homework!");
 
         return grade(mt, ft, median(hw));
 }
 
-// 입력 스트림에서 과제 점수를 읽어서 vector<double>에 넣음.
-istream& read_hw(istream& in, vector<double>& hw) {
-        if (in) {
-                // 이전 내용을 제거
-                hw.clear();
+    double grade(const Student_info& s) {
+        return grade(s.midterm, s.final, s.homework);
+    }
 
-                // 입력을 위한 변수
-                double x; // cin에서 사용하기 
 
-                // 불변성: 지금까지 count개 점수를 입력받았으며
-                // 입력받은 점수의 합은 sum
-                while (in >> x) {
-                        hw.push_back(x);
-                }
-
-                // 다음 학생의 점수 입력 작업을 고려해 스트림을 지움
-                in.clear();
-
-                return in;
-        }
-}
+struct  Student_info {
+    string name;
+    double midterm, final;
+    vector<double> homework;
+}; //세미콜론을 잊지 않도록 주의
 
 int main() {
-        // 학생의 이름을 묻고 입력받기
-        cout << "Your name: ";
-        string name;
-        cin >> name;
-        cout << "Hello, " << name << "!" << endl;
+    vector<Student_info> students;
+    Student_info record;
+    string::size_type maxlen = 0;
 
-        // 중간고사와 기말고사 점수를 묻고 입력받기
-        cout << "Midterm & Final scores: ";
-        double midterm, final; // double = 최소 10자리까지, 보통 15자리까지
-        cin >> midterm >> final;
+    // 학생 이름과 모든 점수를 읽어 저장하고 
+    //가장 긴 이름을 찾음
+    while (read(cin, record)) {
+        maxlen = max(maxlen, record.name.size());
+        //Arron: max(0,5) = 5
+        students.push_back(record);
+    }
 
-        // 과제 점수를 물음
-        cout << "Enter all homework grades "
-                "followed by EOF: "; // End-Of-File
+    //학생 정보를 알파벳 순으로 정렬
+    sort(students.begin(), students.end(), compare);
 
-        vector<double> homework;
-
-        // 과제 점수를 일음
-        read_hw(cin, homework);
-
+    for (vector<Student_info>::size_type i = 0;
+        i != students.size(); ++i) {
+        //이름과 오른쪽 공백을 포함하여 maxlen +1개의
+        //문자를 출력
+        cout << students[i].name
+            << string(maxlen + 1 - students[i].name.size(), ' ');
         // 종합 점수를 계산해 생성
         try {
-                double final_grade = grade(midterm, final, homework);
-                // 결과를 출력
-                streamsize prec = cout.precision(); // 지금 cout precision
-                cout << "Final grade: " << setprecision(3)
-                        << final_grade << setprecision(prec) << endl;
+            double final_grade = grade(students[i]);
+            // 결과를 출력
+            streamsize prec = cout.precision(); // 지금 cout precision
+            cout << "Final grade: " << setprecision(3)
+                << final_grade << setprecision(prec) << endl;
         }
-        catch (domain_error) {
-                cout << endl << "No grades entered. Try again." << endl;
-                return 1;
+        catch (domain_error e) {
+            cout << e.what();
         }
 
-        return 0;
+       }  //for끝
+
+    return 0;
 } // main 끝
